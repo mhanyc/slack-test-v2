@@ -20,16 +20,18 @@ Globals:
     AutoPublishAlias: live
     DeploymentPreference:
       Enabled: true
-      Type: Canary10Percent5Minutes
+      Type: AllAtOnce
       Role: !Ref CodeDeployRole
 
 Resources:
-  HelloWorld:
+  MainEventHandler:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub 'awscodestar-${ProjectId}-lambda-HelloWorld'
-      Handler: index.handler
-      Runtime: python3.7
+      FunctionName: !Sub 'awscodestar-${ProjectId}-lambda'
+      CodeUri: src/
+      Handler: index.main_event_handler
+      Runtime: python3.8
+      Timeout: 60
       Role:
         Fn::GetAtt:
         - LambdaExecutionRole
@@ -38,13 +40,17 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
+            RestApiId: !Ref ProjectAPI
             Path: /
             Method: get
-        PostEvent:
-          Type: Api
-          Properties:
-            Path: /
-            Method: post
+
+  ProjectAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET'"
+
   LambdaExecutionRole:
     Description: Creating service role in IAM for AWS Lambda
     Type: AWS::IAM::Role
@@ -59,4 +65,8 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        # IAM policy changes
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - 'arn:aws:iam::aws:policy/SecretsManagerReadWrite'
+        - 'arn:aws:iam::aws:policy/AmazonSSMFullAccess'
       PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/CodeStar_${ProjectId}_PermissionsBoundary'
