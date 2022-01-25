@@ -24,12 +24,12 @@ Globals:
       Role: !Ref CodeDeployRole
 
 Resources:
-  MainEventHandler:
+  PsapLookupHandler:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub 'awscodestar-${ProjectId}-lambda'
       CodeUri: src/
-      Handler: index.main_event_handler
+      Handler: index.psap_handler
       Runtime: python3.8
       Timeout: 60
       Role:
